@@ -1,0 +1,6 @@
+omp-private/
+private/
+registos.json
+.env
+.env.*
+*.log
