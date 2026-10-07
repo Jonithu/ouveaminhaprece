@@ -46,5 +46,25 @@ try {
  } catch(Throwable $notificationError) {
   error_log('OMP: registration saved; notification mail was not accepted by the local transport.');
  }
+ // Send the visitor's confirmation independently of the administrator notification.
+ try {
+  $sender=$config['notification_from']??'';
+  if(!filter_var($sender,FILTER_VALIDATE_EMAIL)||preg_match('/[\r\n]/',$sender)) throw new RuntimeException('invalid sender');
+  $confirmationSubject='Recebemos a tua prece - pre-registo confirmado';
+  $confirmationBody="Olá, ".$record['name']."!\n\n"
+   ."Obrigado por te juntares ao Ouve a Minha Prece.\n\n"
+   ."O teu pré-registo para o ebook gratuito «7 Dias para Acalmar o Coração com Deus» ficou guardado. "
+   ."Estamos a prepará-lo com carinho e avisaremos por email quando estiver disponível.\n\n"
+   ."Até lá, faz uma pausa. Entrega a Deus o que pesa e encontra um momento de paz.\n\n"
+   ."Podes acompanhar as nossas preces em:\nhttps://www.youtube.com/@ouveaminhaprece\n\n"
+   ."Se tiveres alguma dúvida, ou quiseres cancelar o pré-registo, basta responder a este email. "
+   ."Se não fizeste este pedido, avisa-nos para eliminarmos o registo.\n\n"
+   ."Que Deus ilumine o teu dia.\nAmém.\n\n"
+   ."Ouve a Minha Prece\nhttps://ouveaminhaprece.netlifly.space/\n";
+  $confirmationHeaders=['From: Ouve a Minha Prece <'.$sender.'>','Reply-To: '.$sender,'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8'];
+  if(!function_exists('mail')||!@mail($record['email'],$confirmationSubject,$confirmationBody,implode("\r\n",$confirmationHeaders))) throw new RuntimeException('confirmation transport failed');
+ } catch(Throwable $confirmationError) {
+  error_log('OMP: registration saved; visitor confirmation was not accepted by the local mail transport.');
+ }
  reply(200,['message'=>'Pré-registo guardado. Obrigado por fazeres parte desta caminhada. O ebook está em preparação; o aviso de disponibilidade será enviado quando estiver pronto.']);
 } catch(Throwable $e) {reply(503,['message'=>'Não foi possível guardar o registo. Tenta novamente mais tarde.']);}
