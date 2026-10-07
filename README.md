@@ -18,3 +18,7 @@ https://ouveaminhaprece.netlifly.space/
 - Ver `INSTALAR.md` para instalação e verificação.
 
 O ebook e o envio automático de email serão acrescentados numa fase posterior.
+
+## Avisos de pré-registo
+
+Após guardar cada pré-registo, o formulário tenta enviar um aviso para `prece@netlifly.space`, com nome, email, data e autorizações. Usa a função PHP `mail()` do alojamento, com o mesmo endereço como remetente. A entrega depende da configuração de email do Hostinger e deve ser confirmada com um teste real. Não envia confirmação ao visitante nem o ebook. Se o transporte de email falhar, o registo permanece guardado e o servidor recebe uma mensagem de diagnóstico sem dados pessoais.

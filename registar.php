@@ -28,5 +28,23 @@ try {
  $record=['id'=>bin2hex(random_bytes(16)),'name'=>$name,'email'=>$email,'delivery_consent'=>true,'updates_consent'=>($_POST['updates']??'')==='1','privacy_version'=>$config['privacy_version'],'created_at'=>gmdate('c')];
  $rows[]=$record;$temp=$file.'.tmp';if(file_put_contents($temp,json_encode($rows,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT))===false)throw new RuntimeException('write');chmod($temp,0600);if(!rename($temp,$file))throw new RuntimeException('rename');
  flock($lock,LOCK_UN);fclose($lock);session_regenerate_id(true);$_SESSION['registered']=$record['id'];$_SESSION['csrf']=bin2hex(random_bytes(32));
+ // Notification failure must not undo a saved registration.
+ try {
+  $recipient=$config['notification_email']??'';
+  $sender=$config['notification_from']??'';
+  if(!filter_var($recipient,FILTER_VALIDATE_EMAIL)||!filter_var($sender,FILTER_VALIDATE_EMAIL)||preg_match('/[\r\n]/',$recipient.$sender)) throw new RuntimeException('invalid mail configuration');
+  $subject='Novo pre-registo - Ouve a Minha Prece';
+  $body="Novo pre-registo no site Ouve a Minha Prece.\n\n"
+   ."Nome: ".$record['name']."\n"
+   ."Email: ".$record['email']."\n"
+   ."Aviso de disponibilidade do ebook: autorizado\n"
+   ."Preces e novidades: ".($record['updates_consent']?'autorizado':'nao autorizado')."\n"
+   ."Data UTC: ".$record['created_at']."\n"
+   ."ID: ".$record['id']."\n";
+  $headers=['From: Ouve a Minha Prece <'.$sender.'>','MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8'];
+  if(!function_exists('mail')||!@mail($recipient,$subject,$body,implode("\r\n",$headers))) throw new RuntimeException('mail transport failed');
+ } catch(Throwable $notificationError) {
+  error_log('OMP: registration saved; notification mail was not accepted by the local transport.');
+ }
  reply(200,['message'=>'Pré-registo guardado. Obrigado por fazeres parte desta caminhada. O ebook está em preparação; o aviso de disponibilidade será enviado quando estiver pronto.']);
 } catch(Throwable $e) {reply(503,['message'=>'Não foi possível guardar o registo. Tenta novamente mais tarde.']);}
